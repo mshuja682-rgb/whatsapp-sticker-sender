@@ -127,5 +127,3 @@ function sendToWhatsApp() {
     
     window.open(whatsappUrl, '_blank');
 }
-
-alert('App ready hai! Ab stickers select karo, quantity badlo aur WhatsApp bhejo!');
