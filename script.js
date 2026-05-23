@@ -1,17 +1,19 @@
 // Stickers aur emojis ki list
 const stickers = [
-    "😂", "❤", "😍", "🔥", "🎉", "👍", "👋", "💯","🥳",
-    "😎", "🤔", "😁", "🥳", "🤩", "😇", "🤗", "💪","♥",
-    "🎂", "🍕", "🍟", "🍔", "🌮", "🍿", "🥤", "🍦", "🤧",
-    "👌", "😝", "💖", "🥱", "🤣", "💞", "🐣", "😈", "🧐",
-    "😎𝓛𝓘𝓕𝓔 AT 6:00𝓐𝓜😎", "𝓢𝓞𝓜𝓣𝓗𝓘𝓝𝓖 𝓦𝓔𝓝𝓣 𝓦𝓡𝓞𝓝𝓖😁", "𝔏ℑ𝔉𝔈",
+    "😂", "❤", "🙏", "🔥", "🎉", "👍", "👋", "💯",
+    "😎", "🤔", "😁", "🥳", "🤩", "😇", "🤗", "💪",
+    "🎂", "🍕", "🍟", "🍔", "🌮", "🍿", "🥤", "🍦",
+    "😸", "🐱", "🐶", "🦁", "🐸", "🦄", "🐝", "🦋",
+    "😑", "❤", "🤯", "🔥", "🤬", "💔", "👀", "😍","😚",
+    "🥰","👌", "😝", "💖", "🥱", "🤣", "💞", "🐣", "😈", "🧐",
+   "😘","🎶","🥀",
 ];
 
 const stickerContainer = document.getElementById('stickerContainer');
 const selectedContainer = document.getElementById('selectedContainer');
+const phoneInput = document.getElementById('phoneNumber');
 
 // Har item ki quantity store karne ke liye array
-// Format: { item: "😂", qty: 1 }
 let selectedItems = [];
 
 // Sab stickers display karo
@@ -19,6 +21,7 @@ stickers.forEach(sticker => {
     const div = document.createElement('div');
     div.className = 'sticker-box';
     div.textContent = sticker;
+    div.setAttribute('data-sticker', sticker);
     
     div.onclick = function() {
         addToSelection(sticker);
@@ -29,14 +32,11 @@ stickers.forEach(sticker => {
 
 // Selection mein add karne wala function
 function addToSelection(item) {
-    // Check karo agar pehle se hai
     const existingIndex = selectedItems.findIndex(x => x.item === item);
     
     if (existingIndex > -1) {
-        // Agar hai, to quantity badhao
         selectedItems[existingIndex].qty += 1;
     } else {
-        // Agar nahi hai, to add karo
         selectedItems.push({ item: item, qty: 1 });
     }
     
@@ -53,15 +53,25 @@ function updateSelectedDisplay() {
         
         // Sticker emoji
         const span = document.createElement('span');
-        span.style.fontSize = '40px';
+        span.className = 'selected-emoji';
         span.textContent = selected.item;
         
-        // Quantity badge
-        const qtyBadge = document.createElement('span');
-        qtyBadge.className = 'qty-badge';
-        qtyBadge.textContent = selected.qty;
+        // Quantity label
+        const label = document.createElement('div');
+        label.className = 'qty-label';
+        label.textContent = 'Qty:';
         
-        // Remove button (X)
+        // Quantity input
+        const qtyInput = document.createElement('input');
+        qtyInput.type = 'number';
+        qtyInput.className = 'qty-input';
+        qtyInput.value = selected.qty;
+        qtyInput.min = 1;
+        qtyInput.onchange = function() {
+            updateQuantity(index, qtyInput.value);
+        };
+        
+        // Remove button
         const removeBtn = document.createElement('button');
         removeBtn.className = 'remove-btn';
         removeBtn.textContent = '✕';
@@ -69,20 +79,8 @@ function updateSelectedDisplay() {
             removeFromSelection(index);
         };
         
-        // Quantity input (badalne ke liye)
-        const qtyInput = document.createElement('input');
-        qtyInput.type = 'number';
-        qtyInput.className = 'qty-input';
-        qtyInput.value = selected.qty;
-        qtyInput.min = 1;
-        qtyInput.style.display = 'block';
-        qtyInput.style.margin = '5px auto';
-        qtyInput.onchange = function() {
-            updateQuantity(index, qtyInput.value);
-        };
-        
         div.appendChild(span);
-        div.appendChild(qtyBadge);
+        div.appendChild(label);
         div.appendChild(qtyInput);
         div.appendChild(removeBtn);
         
@@ -90,7 +88,7 @@ function updateSelectedDisplay() {
     });
 }
 
-// Selection se remove karne wala function (AB WORKING!)
+// Remove karne wala function
 function removeFromSelection(index) {
     selectedItems.splice(index, 1);
     updateSelectedDisplay();
@@ -104,14 +102,8 @@ function updateQuantity(index, newQty) {
     updateSelectedDisplay();
 }
 
-// WhatsApp bhejne wala function
-function sendToWhatsApp() {
-    if (selectedItems.length === 0) {
-        alert('Kuch stickers ya emojis select karo!');
-        return;
-    }
-    
-    // Text banana hai - har item ko uski quantity bar repeat karo
+// Text generate karne wala function
+function generateText() {
     let fullText = '';
     
     selectedItems.forEach(selected => {
@@ -120,11 +112,55 @@ function sendToWhatsApp() {
         }
     });
     
-    let text = encodeURIComponent(fullText.trim());
+    return fullText.trim();
+}
+
+// Copy to clipboard function (NAYA)
+function copyToClipboard() {
+    if (selectedItems.length === 0) {
+        alert('please select stickers');
+        return;
+    }
     
-    // WhatsApp Mobile App link
-    const whatsappUrl = `https://api.whatsapp.com/send?text=${text}`;
+    const text = generateText();
+    
+    navigator.clipboard.writeText(text).then(function() {
+        alert('✅ copied!');
+    }, function(err) {
+        alert('copied error: ' + err);
+    });
+}
+
+// WhatsApp bhejne wala function (Updated)
+function sendToWhatsApp() {
+    if (selectedItems.length === 0) {
+        alert('Kuch stickers select karo!');
+        return;
+    }
+    
+    const text = generateText();
+    const phone = phoneInput.value.trim();
+    
+    let whatsappUrl;
+    
+    if (phone) {
+        // Specific contact par bhejne ke liye
+        // Phone number se special characters hatao
+        let cleanPhone = phone.replace(/[^0-9]/g, '');
+        
+        // Check if country code hai
+        if (!cleanPhone.startsWith('92')) {
+            // Agar 92 nahi hai to add karo (Pakistan)
+            if (cleanPhone.startsWith('3')) {
+                cleanPhone = '92' + cleanPhone;
+            }
+        }
+        
+        whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(text)}`;
+    } else {
+        // Bina number ke (new chat)
+        whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    }
     
     window.open(whatsappUrl, '_blank');
 }
-
